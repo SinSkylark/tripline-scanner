@@ -7,23 +7,19 @@
   <title>TripLine Scanner</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
   <style>
-    *, *::before, *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #0a0a0a;
-      --surface: #161616;
-      --surface2: #222222;
-      --accent: #e8c84a;
-      --accent-dim: #b89c2e;
-      --text: #f0f0f0;
-      --text-muted: #888;
-      --danger: #e05252;
-      --radius: 16px;
-      --radius-sm: 10px;
+      --bg:          #0a0a0a;
+      --surface:     #161616;
+      --surface2:    #222222;
+      --accent:      #e8c84a;
+      --accent-dim:  #b89c2e;
+      --text:        #f0f0f0;
+      --text-muted:  #888;
+      --danger:      #e05252;
+      --radius:      16px;
+      --radius-sm:   10px;
     }
 
     html, body {
@@ -52,7 +48,7 @@
       justify-content: center;
       width: 100%;
       max-width: 420px;
-      gap: 24px;
+      gap: 20px;
       animation: fadeIn 0.25s ease;
     }
     .screen.active { display: flex; }
@@ -62,7 +58,7 @@
       to   { opacity: 1; transform: translateY(0); }
     }
 
-    /* ── Logo / Title ── */
+    /* ── Logo ── */
     .logo {
       display: flex;
       flex-direction: column;
@@ -70,27 +66,42 @@
       gap: 8px;
     }
     .logo-icon {
-      width: 72px;
-      height: 72px;
+      width: 72px; height: 72px;
       border-radius: 20px;
       background: var(--accent);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: flex; align-items: center; justify-content: center;
       font-size: 36px;
     }
-    .logo-title {
-      font-size: 28px;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      color: var(--text);
+    .logo-title { font-size: 28px; font-weight: 700; letter-spacing: 0.04em; }
+    .logo-sub   { font-size: 14px; color: var(--text-muted); letter-spacing: 0.06em; text-transform: uppercase; }
+
+    /* ── Source toggle ── */
+    .source-toggle {
+      display: flex;
+      width: 100%;
+      background: var(--surface);
+      border-radius: var(--radius-sm);
+      padding: 4px;
+      gap: 4px;
     }
-    .logo-sub {
-      font-size: 14px;
+    .src-btn {
+      flex: 1;
+      padding: 10px 8px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
       color: var(--text-muted);
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      -webkit-tap-highlight-color: transparent;
     }
+    .src-btn.active {
+      background: var(--accent);
+      color: #0a0a0a;
+    }
+    .src-btn span { font-size: 11px; display: block; font-weight: 400; opacity: 0.75; margin-top: 1px; }
 
     /* ── Buttons ── */
     .btn {
@@ -101,27 +112,14 @@
       font-size: 17px;
       font-weight: 600;
       cursor: pointer;
-      transition: transform 0.1s ease, opacity 0.1s ease;
+      transition: transform 0.1s, opacity 0.1s;
       -webkit-tap-highlight-color: transparent;
       letter-spacing: 0.02em;
     }
     .btn:active { transform: scale(0.97); opacity: 0.85; }
-
-    .btn-primary {
-      background: var(--accent);
-      color: #0a0a0a;
-    }
-    .btn-secondary {
-      background: var(--surface2);
-      color: var(--text);
-    }
-    .btn-open {
-      background: var(--accent);
-      color: #0a0a0a;
-      font-size: 20px;
-      padding: 22px 24px;
-      border-radius: var(--radius);
-    }
+    .btn-primary   { background: var(--accent); color: #0a0a0a; }
+    .btn-secondary { background: var(--surface2); color: var(--text); }
+    .btn-danger    { background: var(--danger); color: #fff; font-size: 19px; padding: 22px 24px; }
 
     /* ── Scanner screen ── */
     #scanner-wrapper {
@@ -132,83 +130,112 @@
       position: relative;
       aspect-ratio: 1 / 1;
     }
-
-    /* html5-qrcode injects a video element; make it fill the box */
-    #qr-reader {
-      width: 100% !important;
-      height: 100% !important;
-    }
-    #qr-reader video {
-      width: 100% !important;
-      height: 100% !important;
-      object-fit: cover !important;
-    }
-    /* hide the default html5-qrcode UI chrome */
-    #qr-reader img,
-    #qr-reader > div > span,
+    #qr-reader { width: 100% !important; height: 100% !important; }
+    #qr-reader video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+    #qr-reader img, #qr-reader > div > span,
     #qr-reader__scan_region > img,
     #qr-reader__dashboard,
-    #qr-reader__header_message {
-      display: none !important;
-    }
+    #qr-reader__header_message { display: none !important; }
 
-    /* viewfinder overlay */
     .viewfinder {
-      position: absolute;
-      inset: 0;
+      position: absolute; inset: 0;
       pointer-events: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: flex; align-items: center; justify-content: center;
     }
     .viewfinder-box {
-      width: 65%;
-      aspect-ratio: 1 / 1;
+      width: 65%; aspect-ratio: 1;
       border: 3px solid var(--accent);
       border-radius: 12px;
       box-shadow: 0 0 0 2000px rgba(0,0,0,0.45);
       animation: pulse 2s ease-in-out infinite;
     }
     @keyframes pulse {
-      0%, 100% { border-color: var(--accent); }
-      50%       { border-color: var(--accent-dim); }
+      0%,100% { border-color: var(--accent); }
+      50%      { border-color: var(--accent-dim); }
     }
 
-    .scan-hint {
-      font-size: 13px;
+    .scan-hint { font-size: 13px; color: var(--text-muted); text-align: center; line-height: 1.5; }
+
+    /* ── Player screen ── */
+    .player-source {
+      font-size: 12px;
       color: var(--text-muted);
-      text-align: center;
-      line-height: 1.5;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      height: 18px;
+    }
+    .player-source .dot {
+      display: inline-block;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      margin-right: 5px;
+      vertical-align: middle;
     }
 
-    /* ── Result screen ── */
-    .result-card {
+    .countdown-ring {
+      position: relative;
+      width: 220px; height: 220px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .countdown-ring svg {
+      position: absolute; inset: 0;
+      transform: rotate(-90deg);
+    }
+    .ring-track {
+      fill: none;
+      stroke: var(--surface2);
+      stroke-width: 4;
+    }
+    .ring-progress {
+      fill: none;
+      stroke: var(--accent);
+      stroke-width: 4;
+      stroke-linecap: round;
+      stroke-dasharray: 628; /* 2π × r=100 */
+      stroke-dashoffset: 0;
+      transition: stroke-dashoffset 1s linear, stroke 0.5s ease;
+    }
+    #countdown-number {
+      font-size: 100px;
+      font-weight: 800;
+      color: var(--accent);
+      line-height: 1;
+      transition: color 0.4s ease;
+      user-select: none;
+    }
+
+    .btn-play-big {
+      width: 100%;
+      padding: 22px 24px;
+      border: none;
+      border-radius: var(--radius);
+      background: var(--accent);
+      color: #0a0a0a;
+      font-size: 22px;
+      font-weight: 700;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      letter-spacing: 0.03em;
+      transition: transform 0.1s, opacity 0.1s;
+    }
+    .btn-play-big:active { transform: scale(0.97); opacity: 0.85; }
+
+    .player-tip { font-size: 12px; color: var(--text-muted); text-align: center; }
+
+    /* ── Done screen ── */
+    .done-card {
       width: 100%;
       background: var(--surface);
       border-radius: var(--radius);
-      padding: 28px 24px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
+      padding: 32px 24px;
+      display: flex; flex-direction: column;
+      align-items: center; gap: 8px;
       text-align: center;
     }
-    .result-check {
-      font-size: 48px;
-      line-height: 1;
-    }
-    .result-label {
-      font-size: 13px;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--text-muted);
-      margin-top: 4px;
-    }
-    .result-ready {
-      font-size: 20px;
-      font-weight: 700;
-      color: var(--text);
-    }
+    .done-icon  { font-size: 52px; line-height: 1; }
+    .done-label { font-size: 13px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-top: 6px; }
+    .done-title { font-size: 22px; font-weight: 700; }
 
     /* ── Error screen ── */
     .error-card {
@@ -216,46 +243,55 @@
       background: var(--surface);
       border-radius: var(--radius);
       padding: 28px 24px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
+      display: flex; flex-direction: column;
+      align-items: center; gap: 12px;
       text-align: center;
     }
-    .error-icon { font-size: 42px; }
-    .error-title {
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--danger);
-    }
-    .error-body {
-      font-size: 14px;
-      color: var(--text-muted);
-      line-height: 1.55;
-    }
+    .error-icon  { font-size: 42px; }
+    .error-title { font-size: 18px; font-weight: 700; color: var(--danger); }
+    .error-body  { font-size: 14px; color: var(--text-muted); line-height: 1.55; }
     .error-body strong { color: var(--text); }
 
-    /* ── Footer hint ── */
-    .tip {
-      font-size: 12px;
-      color: var(--text-muted);
-      text-align: center;
-      line-height: 1.6;
-      padding: 0 8px;
-    }
+    /* ── Legacy result (old QR format fallback) ── */
+    .legacy-note { font-size: 13px; color: var(--text-muted); text-align: center; line-height: 1.6; }
+
+    /* ── Footer tip ── */
+    .tip { font-size: 12px; color: var(--text-muted); text-align: center; line-height: 1.6; padding: 0 8px; }
     .tip span { color: var(--accent); font-weight: 600; }
+
+    /* ── Hidden YouTube container ── */
+    #yt-container {
+      position: fixed;
+      bottom: -2px; right: -2px;
+      width: 2px; height: 2px;
+      overflow: hidden;
+      opacity: 0.01; /* must be > 0 for iOS to allow JS playback */
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
 <div id="app">
 
-  <!-- ① START SCREEN -->
+  <!-- ① START -->
   <section class="screen active" id="screen-start">
     <div class="logo">
       <div class="logo-icon">🎵</div>
       <div class="logo-title">TripLine</div>
       <div class="logo-sub">Card Scanner</div>
     </div>
+
+    <div class="source-toggle">
+      <button class="src-btn" id="src-yt" onclick="setSource('youtube')">
+        ▶ YouTube
+        <span>Random start</span>
+      </button>
+      <button class="src-btn" id="src-dz" onclick="setSource('deezer')">
+        ♪ Deezer
+        <span>Fixed preview</span>
+      </button>
+    </div>
+
     <button class="btn btn-primary" onclick="startScanner()">Scan Card</button>
     <p class="tip">
       Avoid <span>strong light reflections</span> on the card —<br>
@@ -263,158 +299,571 @@
     </p>
   </section>
 
-  <!-- ② SCANNER SCREEN -->
+  <!-- ② SCANNER -->
   <section class="screen" id="screen-scanner">
     <div id="scanner-wrapper">
       <div id="qr-reader"></div>
-      <div class="viewfinder">
-        <div class="viewfinder-box"></div>
-      </div>
+      <div class="viewfinder"><div class="viewfinder-box"></div></div>
     </div>
     <p class="scan-hint">Hold the card steady inside the frame</p>
     <button class="btn btn-secondary" onclick="cancelScanner()">Cancel</button>
   </section>
 
-  <!-- ③ RESULT SCREEN -->
-  <section class="screen" id="screen-result">
-    <div class="result-card">
-      <div class="result-check">🎶</div>
-      <div class="result-label">Card scanned</div>
-      <div class="result-ready">Ready to play!</div>
+  <!-- ③ PLAYER -->
+  <section class="screen" id="screen-player">
+    <div class="player-source" id="player-source-label">
+      <span class="dot"></span><span id="source-name">YouTube</span>
     </div>
-    <button class="btn btn-open" id="btn-open" onclick="openSong()">▶ Open Song</button>
+
+    <div class="countdown-ring">
+      <svg viewBox="0 0 220 220" width="220" height="220">
+        <circle class="ring-track"    cx="110" cy="110" r="100"/>
+        <circle class="ring-progress" cx="110" cy="110" r="100" id="ring-arc"/>
+      </svg>
+      <div id="countdown-number">30</div>
+    </div>
+
+    <!-- Pre-play state -->
+    <div id="state-ready" style="width:100%; display:flex; flex-direction:column; gap:14px;">
+      <button class="btn-play-big" id="btn-tap-play" onclick="tapPlay()">▶ TAP TO PLAY</button>
+      <p class="player-tip" id="player-tip">DJ: tap play, then turn the phone face down</p>
+      <a id="btn-yt-link" href="#" target="_blank" rel="noopener"
+         style="display:none; text-align:center; color:var(--text-muted); font-size:13px; text-decoration:underline; padding:4px 0;">
+        Can't play? Open on YouTube ↗
+      </a>
+    </div>
+
+    <!-- Playing state -->
+    <div id="state-playing" style="width:100%; display:none;">
+      <button class="btn btn-danger" onclick="tapStop()">■ STOP</button>
+    </div>
+  </section>
+
+  <!-- ④ DONE -->
+  <section class="screen" id="screen-done">
+    <div class="done-card">
+      <div class="done-icon">🎶</div>
+      <div class="done-label">Time's up</div>
+      <div class="done-title">What year was it?</div>
+    </div>
+    <button class="btn btn-primary"   onclick="scanNext()">Scan Next Card</button>
+    <button class="btn btn-secondary" onclick="playAgain()">↺ Play Again</button>
+  </section>
+
+  <!-- ⑤ LEGACY (old QR format — plain URL) -->
+  <section class="screen" id="screen-legacy">
+    <div class="done-card">
+      <div class="done-icon">🎵</div>
+      <div class="done-label">Card scanned</div>
+      <div class="done-title">Ready to play!</div>
+    </div>
+    <button class="btn btn-primary" id="btn-legacy-open" onclick="openLegacyUrl()">▶ Open Song</button>
     <button class="btn btn-secondary" onclick="scanNext()">Scan Next Card</button>
   </section>
 
-  <!-- ④ ERROR SCREEN -->
+  <!-- ⑥ ERROR -->
   <section class="screen" id="screen-error">
     <div class="error-card">
       <div class="error-icon">📷</div>
       <div class="error-title" id="error-title">Camera access denied</div>
-      <div class="error-body" id="error-body"></div>
+      <div class="error-body"  id="error-body"></div>
     </div>
     <button class="btn btn-primary" onclick="showScreen('screen-start')">Try Again</button>
   </section>
 
 </div>
 
-<script>
-  // ── State ──────────────────────────────────────────────────────────────
-  let html5QrCode = null;
-  let scannedUrl   = null;
+<!-- Hidden YouTube container — must be in DOM for iOS playback -->
+<div id="yt-container"><div id="yt-iframe"></div></div>
 
-  // ── Screen helpers ─────────────────────────────────────────────────────
-  function showScreen(id) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
+<script>
+// ═══════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════
+let html5QrCode     = null;
+let scannedData     = null;   // { yt, dz } or { raw }
+let currentSource   = localStorage.getItem('tl_source') || 'youtube';
+let countdownSec    = 30;
+let countdownTimer  = null;
+let ytPlayer        = null;
+let ytPlayerReady   = false;
+let audioEl         = null;
+let pendingPlay     = false;  // play as soon as YT player is ready
+
+// ═══════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════
+(function init() {
+  loadYouTubeAPI();
+  applySourceUI(currentSource);
+})();
+
+// ═══════════════════════════════════════════════════════
+//  SCREEN HELPERS
+// ═══════════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════
+//  SOURCE TOGGLE
+// ═══════════════════════════════════════════════════════
+function setSource(src) {
+  currentSource = src;
+  localStorage.setItem('tl_source', src);
+  applySourceUI(src);
+}
+
+function applySourceUI(src) {
+  document.getElementById('src-yt').classList.toggle('active', src === 'youtube');
+  document.getElementById('src-dz').classList.toggle('active', src === 'deezer');
+}
+
+function resolveSource(data) {
+  // Return the source we'll actually use, with auto-fallback
+  if (currentSource === 'youtube') {
+    if (data.yt) return 'youtube';
+    if (data.dz) return 'deezer';
+  } else {
+    if (data.dz) return 'deezer';
+    if (data.yt) return 'youtube';
+  }
+  return null;
+}
+
+// ═══════════════════════════════════════════════════════
+//  QR PARSING
+// ═══════════════════════════════════════════════════════
+function parseQR(text) {
+  text = text.trim();
+
+  // New format: tripline:yt=VIDEO_ID&dz=DEEZER_ID
+  if (text.startsWith('tripline:')) {
+    const params = new URLSearchParams(text.slice(9));
+    const yt = params.get('yt') || null;
+    const dz = params.get('dz') || null;
+    if (yt || dz) return { yt, dz };
   }
 
-  // ── Scanner ─────────────────────────────────────────────────────────────
-  async function startScanner() {
-    showScreen('screen-scanner');
+  // Plain YouTube URLs (backward compat / test cards)
+  const ytMatch = text.match(
+    /(?:youtube\.com\/watch[?&]v=|youtu\.be\/)([A-Za-z0-9_-]{11})/
+  );
+  if (ytMatch) return { yt: ytMatch[1], dz: null };
 
-    // Destroy previous instance if any
-    if (html5QrCode) {
-      try { await html5QrCode.stop(); } catch (_) {}
-      html5QrCode = null;
-    }
+  // Plain 11-char YouTube ID
+  if (/^[A-Za-z0-9_-]{11}$/.test(text)) return { yt: text, dz: null };
 
-    html5QrCode = new Html5Qrcode('qr-reader', { verbose: false });
+  // Anything else — legacy external URL
+  return { raw: text };
+}
 
-    const config = {
-      fps: 15,
-      qrbox: { width: 220, height: 220 },
-      aspectRatio: 1.0,
-      // Force rear camera
-      videoConstraints: {
-        facingMode: { exact: 'environment' }
-      }
-    };
+// ═══════════════════════════════════════════════════════
+//  SCANNER
+// ═══════════════════════════════════════════════════════
+async function startScanner() {
+  showScreen('screen-scanner');
 
+  if (html5QrCode) {
+    try { await html5QrCode.stop(); } catch (_) {}
+    html5QrCode = null;
+  }
+
+  html5QrCode = new Html5Qrcode('qr-reader', { verbose: false });
+
+  const config = {
+    fps: 15,
+    qrbox: { width: 220, height: 220 },
+    aspectRatio: 1.0,
+  };
+
+  try {
+    await html5QrCode.start(
+      { facingMode: { exact: 'environment' } },
+      config, onScanSuccess, () => {}
+    );
+  } catch (_) {
     try {
       await html5QrCode.start(
-        { facingMode: { exact: 'environment' } },
-        config,
-        onScanSuccess,
-        /* onScanFailure */ () => {}
+        { facingMode: 'environment' },
+        config, onScanSuccess, () => {}
       );
     } catch (err) {
-      // Fallback: try without exact constraint (desktop / front-camera devices)
-      try {
-        await html5QrCode.start(
-          { facingMode: 'environment' },
-          { ...config, videoConstraints: { facingMode: 'environment' } },
-          onScanSuccess,
-          () => {}
-        );
-      } catch (err2) {
-        handleCameraError(err2);
-      }
+      handleCameraError(err);
     }
   }
+}
 
-  function onScanSuccess(decodedText) {
-    // Vibrate for haptic feedback if supported
-    if (navigator.vibrate) navigator.vibrate(60);
-
-    scannedUrl = decodedText;
-    stopScanner().then(() => showScreen('screen-result'));
-  }
-
-  async function stopScanner() {
-    if (html5QrCode) {
-      try { await html5QrCode.stop(); } catch (_) {}
-      html5QrCode = null;
-    }
-  }
-
-  async function cancelScanner() {
-    await stopScanner();
-    showScreen('screen-start');
-  }
-
-  // ── Error handling ──────────────────────────────────────────────────────
-  function handleCameraError(err) {
-    stopScanner();
-
-    const msg = (err && err.message) ? err.message.toLowerCase() : String(err).toLowerCase();
-    let title = 'Camera access denied';
-    let body  = '';
-
-    if (msg.includes('permission') || msg.includes('notallowed') || msg.includes('denied')) {
-      title = 'Camera access denied';
-      body  = `To play, you need to grant camera access.<br><br>
-               <strong>On iPhone/iPad:</strong> Settings → Safari → Camera → Allow<br><br>
-               <strong>On Android:</strong> tap the 🔒 icon in the address bar → Permissions → Camera → Allow<br><br>
-               Then return here and tap <strong>Try Again</strong>.`;
-    } else if (msg.includes('notfound') || msg.includes('no camera') || msg.includes('no device')) {
-      title = 'No camera found';
-      body  = 'This device does not appear to have a rear camera. Please use a mobile phone or tablet.';
-    } else if (msg.includes('notreadable') || msg.includes('in use')) {
-      title = 'Camera in use';
-      body  = 'Another app is using the camera. Close it and try again.';
+function onScanSuccess(text) {
+  if (navigator.vibrate) navigator.vibrate(60);
+  scannedData = parseQR(text);
+  stopScanner().then(() => {
+    if (scannedData.raw) {
+      showScreen('screen-legacy');
     } else {
-      title = 'Camera unavailable';
-      body  = `Could not start the camera.<br><br>Make sure you're using HTTPS and that no other app is using the camera.<br><br><em>${err}</em>`;
+      preparePlayer();
     }
+  });
+}
 
-    document.getElementById('error-title').textContent = title;
-    document.getElementById('error-body').innerHTML   = body;
-    showScreen('screen-error');
+async function stopScanner() {
+  if (html5QrCode) {
+    try { await html5QrCode.stop(); } catch (_) {}
+    html5QrCode = null;
+  }
+}
+
+async function cancelScanner() {
+  await stopScanner();
+  showScreen('screen-start');
+}
+
+// ═══════════════════════════════════════════════════════
+//  PLAYER SETUP
+// ═══════════════════════════════════════════════════════
+function preparePlayer() {
+  stopAudio();
+  pendingPlay = false;
+
+  const src = resolveSource(scannedData);
+  if (!src) {
+    showError('No playable source', 'This card has no YouTube or Deezer ID. Regenerate it with the updated card generator.');
+    return;
   }
 
-  // ── Result actions ──────────────────────────────────────────────────────
-  function openSong() {
-    if (scannedUrl) {
-      // Open in new tab; DJ turns phone away before revealing screen
-      window.open(scannedUrl, '_blank', 'noopener,noreferrer');
+  // Update source badge
+  document.getElementById('source-name').textContent =
+    src === 'youtube' ? 'YouTube  ·  random start' : 'Deezer  ·  preview clip';
+
+  // Add fallback note if auto-switched
+  const used    = src;
+  const wanted  = currentSource;
+  if (used !== wanted) {
+    const other = wanted === 'youtube' ? 'YouTube' : 'Deezer';
+    document.getElementById('player-tip').textContent =
+      `${other} ID missing — using ${used === 'youtube' ? 'YouTube' : 'Deezer'} fallback`;
+  } else {
+    document.getElementById('player-tip').textContent =
+      'DJ: tap play, then turn the phone face down';
+  }
+
+  // Reset countdown UI
+  resetCountdownUI();
+
+  // Show pre-play state
+  document.getElementById('state-ready').style.display   = 'flex';
+  document.getElementById('state-playing').style.display = 'none';
+
+  // Show YouTube fallback link (visible always so Brave/strict browsers have an out)
+  const ytLink = document.getElementById('btn-yt-link');
+  if (src === 'youtube' && scannedData.yt) {
+    ytLink.href = 'https://www.youtube.com/watch?v=' + scannedData.yt;
+    ytLink.style.display = 'block';
+  } else {
+    ytLink.style.display = 'none';
+  }
+
+  showScreen('screen-player');
+
+  // Pre-load YouTube in background (random start so no audio flash at 0:00)
+  if (src === 'youtube' && scannedData.yt) {
+    preloadYouTube(scannedData.yt);
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  YOUTUBE
+// ═══════════════════════════════════════════════════════
+function loadYouTubeAPI() {
+  const tag = document.createElement('script');
+  tag.src = 'https://www.youtube.com/iframe_api';
+  document.head.appendChild(tag);
+}
+
+window.onYouTubeIframeAPIReady = function () {
+  // API loaded — player creation happens in preloadYouTube
+};
+
+function randomStartSeconds() {
+  // Safe range: 30 – 150s  (covers most 3-5min songs without going past the end)
+  return 30 + Math.floor(Math.random() * 120);
+}
+
+function preloadYouTube(videoId) {
+  ytPlayerReady = false;
+
+  if (ytPlayer) {
+    try { ytPlayer.destroy(); } catch (_) {}
+    ytPlayer = null;
+  }
+
+  // Recreate the target div (destroy removes it from DOM)
+  const container = document.getElementById('yt-container');
+  container.innerHTML = '<div id="yt-iframe"></div>';
+
+  const startAt = randomStartSeconds();
+
+  ytPlayer = new YT.Player('yt-iframe', {
+    height: '2', width: '2',
+    videoId: videoId,
+    playerVars: {
+      autoplay:    0,
+      controls:    0,
+      playsinline: 1,
+      rel:         0,
+      start:       startAt,  // load buffered at random position
+    },
+    events: {
+      onReady:       onYTReady,
+      onStateChange: onYTStateChange,
+      onError:       onYTError,
+    },
+  });
+}
+
+function onYTReady() {
+  ytPlayerReady = true;
+  if (pendingPlay) {
+    pendingPlay = false;
+    executeYouTubePlay();
+  }
+}
+
+function onYTStateChange(event) {
+  // YT.PlayerState.PLAYING = 1
+  if (event.data === 1 && countdownTimer === null) {
+    // Playback actually started — kick off countdown
+    startCountdown(() => {
+      try { ytPlayer.stopVideo(); } catch (_) {}
+      showScreen('screen-done');
+    });
+  }
+}
+
+function onYTError() {
+  clearCountdown();
+  stopAudio();
+  // Try Deezer fallback
+  if (scannedData.dz) {
+    document.getElementById('source-name').textContent = 'Deezer  ·  fallback';
+    startDeezerPlayback(scannedData.dz);
+  } else {
+    showError('Playback failed', 'YouTube couldn\'t load this track and no Deezer ID is available. Check the card\'s youtube_id.');
+  }
+}
+
+function executeYouTubePlay() {
+  // Refine start position now that duration may be known
+  try {
+    const dur = ytPlayer.getDuration();
+    if (dur && dur > 60) {
+      const max   = Math.max(35, dur - 35);
+      const start = 30 + Math.floor(Math.random() * (max - 30));
+      ytPlayer.seekTo(start, true);
     }
+  } catch (_) { /* use preloaded start position */ }
+  ytPlayer.playVideo();
+}
+
+// ═══════════════════════════════════════════════════════
+//  DEEZER
+// ═══════════════════════════════════════════════════════
+let _dzCallbackName = null;
+
+function startDeezerPlayback(trackId) {
+  // Clean up any old JSONP callback
+  if (_dzCallbackName && window[_dzCallbackName]) {
+    delete window[_dzCallbackName];
   }
 
-  function scanNext() {
-    scannedUrl = null;
-    startScanner();
+  _dzCallbackName = '_dzCb_' + Date.now();
+
+  window[_dzCallbackName] = function (data) {
+    delete window[_dzCallbackName];
+    if (!data || !data.preview) {
+      showError('Track unavailable', 'No Deezer preview for this track. Switch to YouTube or update the card\'s deezer_id.');
+      return;
+    }
+    if (audioEl) { audioEl.pause(); audioEl = null; }
+    audioEl = new Audio(data.preview);
+    audioEl.play().then(() => {
+      startCountdown(() => {
+        audioEl.pause();
+        audioEl = null;
+        showScreen('screen-done');
+      });
+    }).catch(() => {
+      showError('Playback blocked', 'Browser blocked auto-play. Tap "Try Again" and use the Play button.');
+    });
+  };
+
+  const script = document.createElement('script');
+  script.src = `https://api.deezer.com/track/${trackId}?output=jsonp&callback=${_dzCallbackName}`;
+  script.onerror = () => {
+    showError('Deezer error', 'Could not reach Deezer API. Check your connection or switch to YouTube.');
+  };
+  document.head.appendChild(script);
+}
+
+// ═══════════════════════════════════════════════════════
+//  TAP PLAY / STOP
+// ═══════════════════════════════════════════════════════
+function tapPlay() {
+  document.getElementById('state-ready').style.display   = 'none';
+  document.getElementById('state-playing').style.display = 'block';
+
+  const src = resolveSource(scannedData);
+
+  if (src === 'youtube') {
+    if (ytPlayerReady) {
+      executeYouTubePlay();
+    } else {
+      // Player still loading — set flag, countdown starts in onYTReady → executeYouTubePlay
+      pendingPlay = true;
+      document.getElementById('countdown-number').textContent = '…';
+    }
+  } else if (src === 'deezer') {
+    startDeezerPlayback(scannedData.dz);
   }
+}
+
+function tapStop() {
+  clearCountdown();
+  stopAudio();
+  showScreen('screen-done');
+}
+
+function stopAudio() {
+  if (ytPlayer) {
+    try { ytPlayer.stopVideo(); } catch (_) {}
+  }
+  if (audioEl) {
+    audioEl.pause();
+    audioEl = null;
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  COUNTDOWN
+// ═══════════════════════════════════════════════════════
+const RING_CIRCUM = 628; // 2π × 100
+
+function resetCountdownUI() {
+  countdownSec = 30;
+  document.getElementById('countdown-number').textContent = '30';
+  document.getElementById('countdown-number').style.color = 'var(--accent)';
+  document.getElementById('ring-arc').style.strokeDashoffset = '0';
+  document.getElementById('ring-arc').style.stroke = 'var(--accent)';
+  countdownTimer = null;
+}
+
+function startCountdown(onDone) {
+  clearCountdown();
+  countdownSec = 30;
+  tickCountdown(onDone);
+  countdownTimer = setInterval(() => tickCountdown(onDone), 1000);
+}
+
+function tickCountdown(onDone) {
+  const n = document.getElementById('countdown-number');
+  const arc = document.getElementById('ring-arc');
+
+  n.textContent = countdownSec;
+
+  // Progress ring
+  const progress  = (30 - countdownSec) / 30;
+  arc.style.strokeDashoffset = (RING_CIRCUM * progress).toFixed(1);
+
+  // Colour shift at ≤ 5 seconds
+  const danger = countdownSec <= 5;
+  n.style.color  = danger ? 'var(--danger)' : 'var(--accent)';
+  arc.style.stroke = danger ? 'var(--danger)' : 'var(--accent)';
+
+  if (countdownSec <= 0) {
+    clearCountdown();
+    onDone();
+    return;
+  }
+  countdownSec--;
+}
+
+function clearCountdown() {
+  if (countdownTimer) {
+    clearInterval(countdownTimer);
+    countdownTimer = null;
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════════════════
+function scanNext() {
+  scannedData = null;
+  clearCountdown();
+  stopAudio();
+  startScanner();
+}
+
+function playAgain() {
+  if (!scannedData) { showScreen('screen-start'); return; }
+  preparePlayer();
+}
+
+function openLegacyUrl() {
+  if (!scannedData) return;
+  let url = scannedData.raw || '';
+
+  // Convert tripline: protocol → real URL (old GitHub Pages deployed before v2)
+  if (url.startsWith('tripline:')) {
+    const params = new URLSearchParams(url.slice(9));
+    const yt = params.get('yt');
+    const dz = params.get('dz');
+    if (yt)      url = 'https://www.youtube.com/watch?v=' + yt;
+    else if (dz) url = 'https://www.deezer.com/track/' + dz;
+    else return;
+  }
+
+  if (!url) return;
+  // Use location.href — works on Brave/iOS; window.open() is blocked by popup filters
+  window.location.href = url;
+}
+
+// ═══════════════════════════════════════════════════════
+//  ERROR HANDLING
+// ═══════════════════════════════════════════════════════
+function handleCameraError(err) {
+  stopScanner();
+  const msg = ((err && err.message) || String(err)).toLowerCase();
+  let title, body;
+
+  if (msg.includes('permission') || msg.includes('notallowed') || msg.includes('denied')) {
+    title = 'Camera access denied';
+    body  = `Grant camera access first.<br><br>
+             <strong>iPhone:</strong> Settings → Safari → Camera → Allow<br><br>
+             <strong>Android:</strong> tap 🔒 in address bar → Camera → Allow<br><br>
+             Then tap <strong>Try Again</strong>.`;
+  } else if (msg.includes('notfound') || msg.includes('no camera') || msg.includes('no device')) {
+    title = 'No camera found';
+    body  = 'This device doesn\'t appear to have a rear camera. Use a mobile phone.';
+  } else if (msg.includes('notreadable') || msg.includes('in use')) {
+    title = 'Camera in use';
+    body  = 'Another app is using the camera. Close it and try again.';
+  } else {
+    title = 'Camera unavailable';
+    body  = `Make sure you're on HTTPS and no other app is using the camera.<br><br><em>${err}</em>`;
+  }
+
+  document.getElementById('error-title').textContent = title;
+  document.getElementById('error-body').innerHTML    = body;
+  showScreen('screen-error');
+}
+
+function showError(title, body) {
+  document.getElementById('error-title').textContent = title;
+  document.getElementById('error-body').textContent  = body;
+  showScreen('screen-error');
+}
 </script>
 </body>
 </html>
