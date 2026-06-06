@@ -389,8 +389,7 @@ let ytPlayer        = null;
 let ytPlayerReady   = false;
 let ytApiBlocked    = false;  // true if Brave/uBlock blocks youtube API script
 let audioEl         = null;
-let pendingPlay     = false;  // play as soon as YT player is ready
-let pendingTimer    = null;   // timeout — fallback if API never loads
+let pendingPlay     = false;  // play as soon as YT player is ready (Chrome race)
 let pendingVideoId  = null;   // video queued before YT API finished loading
 
 // ═══════════════════════════════════════════════════════
@@ -655,7 +654,6 @@ function preloadYouTube(videoId) {
 
 function onYTReady() {
   ytPlayerReady = true;
-  if (pendingTimer) { clearTimeout(pendingTimer); pendingTimer = null; }
   if (pendingPlay) {
     pendingPlay = false;
     executeYouTubePlay();
@@ -749,50 +747,18 @@ function tapPlay() {
 
   if (src === 'youtube') {
     if (ytPlayerReady) {
+      // In-app playback (Chrome, Firefox — postMessage works fine)
       executeYouTubePlay();
     } else {
-      // Player still loading — set flag, countdown starts in onYTReady → executeYouTubePlay
-      pendingPlay = true;
-      document.getElementById('countdown-number').textContent = '…';
-
-      // Safety net: if API never loads (Brave Shields / uBlock), surface fallback after 4s
-      if (pendingTimer) clearTimeout(pendingTimer);
-      pendingTimer = setTimeout(() => {
-        if (!pendingPlay) return;   // already resolved
-        pendingPlay = false;
-
-        // Restore ready state so the YouTube link is actually visible
-        document.getElementById('state-ready').style.display  = 'flex';
-        document.getElementById('state-playing').style.display = 'none';
-
-        // Replace TAP TO PLAY with an error message
-        const btn = document.getElementById('btn-tap-play');
-        btn.textContent = 'Playback blocked by browser';
-        btn.style.opacity = '0.4';
-        btn.onclick = null;
-
-        // Make the YouTube link big and obvious
-        const ytLink = document.getElementById('btn-yt-link');
-        ytLink.textContent = '▶ Open on YouTube instead';
-        ytLink.style.cssText = [
-          'display:block',
-          'text-align:center',
-          'color:var(--accent)',
-          'font-size:16px',
-          'font-weight:600',
-          'padding:14px 0',
-          'text-decoration:none',
-          'border:2px solid var(--accent)',
-          'border-radius:12px',
-          'background:transparent',
-        ].join(';');
-
-        // Dim the ring to show error state
-        document.getElementById('countdown-number').textContent  = '⚠';
-        document.getElementById('countdown-number').style.color  = 'var(--text-muted)';
-        document.getElementById('countdown-number').style.fontSize = '60px';
-        document.getElementById('ring-arc').style.stroke         = 'var(--text-muted)';
-      }, 4000);
+      // Safari/Brave: IFrame API blocked by ITP/Shields.
+      // Open YouTube at a random timestamp AND start the 30s countdown here.
+      // Game mechanic is preserved: music plays in YouTube, timer runs in the app.
+      const startSec = randomStartSeconds();
+      window.open(
+        `https://www.youtube.com/watch?v=${scannedData.yt}&t=${startSec}s`,
+        '_blank', 'noopener'
+      );
+      startCountdown(() => showScreen('screen-done'));
     }
   } else if (src === 'deezer') {
     startDeezerPlayback(scannedData.dz);
