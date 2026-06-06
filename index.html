@@ -598,6 +598,8 @@ function randomStartSeconds() {
   return 30 + Math.floor(Math.random() * 120);
 }
 
+let _readyPollInterval = null;
+
 function preloadYouTube(videoId) {
   // Guard: YT API might not be loaded yet (race — card scanned before script finished)
   if (!window.YT || !window.YT.Player) {
@@ -606,6 +608,7 @@ function preloadYouTube(videoId) {
   }
 
   ytPlayerReady = false;
+  if (_readyPollInterval) { clearInterval(_readyPollInterval); _readyPollInterval = null; }
 
   if (ytPlayer) {
     try { ytPlayer.destroy(); } catch (_) {}
@@ -626,14 +629,28 @@ function preloadYouTube(videoId) {
       controls:    0,
       playsinline: 1,
       rel:         0,
-      start:       startAt,  // load buffered at random position
+      start:       startAt,
     },
     events: {
-      onReady:       onYTReady,
+      onReady:       onYTReady,       // fires in Chrome — keep for non-Safari
       onStateChange: onYTStateChange,
       onError:       onYTError,
     },
   });
+
+  // Safari blocks the postMessage that triggers onReady.
+  // Poll getPlayerState() directly — works even without the callback.
+  _readyPollInterval = setInterval(() => {
+    if (ytPlayerReady) { clearInterval(_readyPollInterval); _readyPollInterval = null; return; }
+    try {
+      const state = ytPlayer && ytPlayer.getPlayerState && ytPlayer.getPlayerState();
+      // -1 = unstarted (loaded), 0-5 = other states — all mean player is ready
+      if (state !== undefined && state !== null) {
+        clearInterval(_readyPollInterval); _readyPollInterval = null;
+        onYTReady();
+      }
+    } catch (_) {}
+  }, 250);
 }
 
 function onYTReady() {
@@ -789,6 +806,7 @@ function tapStop() {
 }
 
 function stopAudio() {
+  if (_readyPollInterval) { clearInterval(_readyPollInterval); _readyPollInterval = null; }
   if (ytPlayer) {
     try { ytPlayer.stopVideo(); } catch (_) {}
   }
