@@ -400,7 +400,7 @@
 // ═══════════════════════════════════════════════════════
 //  VERSION
 // ═══════════════════════════════════════════════════════
-const _V = { ts: '2026-06-08 17:45 UTC', commit: 'e62eb91' };
+const _V = { ts: '2026-06-08 17:45 UTC', commit: '387334e' };
 console.log(
   '%c TripLine Scanner %c ' + _V.commit + ' %c ' + _V.ts + ' ',
   'background:#e8c84a;color:#0a0a0a;font-weight:700;padding:2px 6px;border-radius:3px 0 0 3px',
@@ -565,7 +565,7 @@ async function loadServiceLinks(data) {
   if (!data || !data.it) { resolveReady = true; return; }
 
   try {
-    const resp = await fetch(`https://itunes.apple.com/lookup?id=${data.it}`);
+    const resp = await fetch(`https://itunes.apple.com/lookup?id=${encodeURIComponent(data.it)}`);
     const json = await resp.json();
     const r    = json.results?.[0];
     if (r) {
@@ -785,6 +785,23 @@ function playAgain() {
   preparePlayer();
 }
 
+// A printed QR code is UNTRUSTED input. Without this gate, a malicious card
+// (e.g. one slipped into someone's deck) could redirect the scanner to a
+// phishing page or run a `javascript:` URL in this origin. We only ever
+// navigate to https:// links on a short allow-list of known music hosts.
+const ALLOWED_HOSTS = [
+  'youtube.com', 'youtu.be', 'music.youtube.com',
+  'deezer.com', 'spotify.com', 'open.spotify.com',
+  'music.apple.com', 'itunes.apple.com', 'tidal.com', 'bandcamp.com',
+];
+function isSafeMusicUrl(u) {
+  let p;
+  try { p = new URL(u); } catch (_) { return false; }
+  if (p.protocol !== 'https:') return false;
+  const h = p.hostname.toLowerCase();
+  return ALLOWED_HOSTS.some(d => h === d || h.endsWith('.' + d));
+}
+
 function openLegacyUrl() {
   if (!scannedData) return;
   let url = scannedData.raw || '';
@@ -794,12 +811,18 @@ function openLegacyUrl() {
     const params = new URLSearchParams(url.slice(9));
     const yt = params.get('yt');
     const dz = params.get('dz');
-    if (yt)      url = 'https://www.youtube.com/watch?v=' + yt;
-    else if (dz) url = 'https://www.deezer.com/track/' + dz;
+    if (yt)      url = 'https://www.youtube.com/watch?v=' + encodeURIComponent(yt);
+    else if (dz) url = 'https://www.deezer.com/track/' + encodeURIComponent(dz);
     else return;
   }
 
   if (!url) return;
+  if (!isSafeMusicUrl(url)) {
+    console.warn('Blocked unsafe QR target:', url);
+    showError('Niezaufany kod QR',
+      'Ten kod prowadzi poza znane serwisy muzyczne i został zablokowany dla bezpieczeństwa.');
+    return;
+  }
   // Use location.href — works on Brave/iOS; window.open() is blocked by popup filters
   window.location.href = url;
 }
