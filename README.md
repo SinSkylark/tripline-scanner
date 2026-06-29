@@ -27,17 +27,59 @@ bez backendu.
 > Odliczanie liczy czas z zegara (`Date.now()`), więc nie rozjeżdża się,
 > gdy aplikacja działa w tle (np. po przełączeniu do YouTube).
 
-## Format kodu QR na karcie
+## Kontrakt QR (źródło prawdy)
+
+> **To jest kanoniczna specyfikacja formatu kodu na karcie.** Każde narzędzie,
+> które *generuje* karty (np. osobne repo z generatorem), musi produkować
+> dokładnie ten format — w przeciwnym razie skaner ich nie odczyta. Parser po
+> stronie skanera to `parseQR()` w `index.html`; ta sekcja i ten parser muszą
+> pozostawać zgodne.
+
+### Format podstawowy (zalecany)
 
 ```
 tripline:yt=VIDEO_ID&it=ITUNES_ID&dz=DEEZER_ID&t=TYTUŁ&a=WYKONAWCA&y=ROK
 ```
 
-- `it` (iTunes track ID) jest potrzebne do fragmentu 30s i metadanych.
-- `t` / `a` / `y` są opcjonalne — jeśli podane, mają **pierwszeństwo** na
-  ekranie odpowiedzi (autorytatywny rok gry). Bez nich rok pochodzi z daty
-  wydania w iTunes (uwaga: dla wznowień może być nietrafny).
-- Obsługiwane są też zwykłe linki YouTube i czyste 11-znakowe ID (kompat.).
+Po prefiksie `tripline:` następuje ciąg w formacie query-string
+(`URLSearchParams`). Wartości muszą być **URL-encoded** (np. spacje jako `%20`),
+bo `&` i `=` rozdzielają pola.
+
+| Pole | Wymagane | Znaczenie | Uwagi |
+|------|----------|-----------|-------|
+| `yt` | zalecane | ID filmu YouTube (11 znaków `[A-Za-z0-9_-]`) | używane do odtwarzania YouTube i jako fallback |
+| `it` | zalecane | iTunes track ID (liczba) | potrzebne do fragmentu 30 s i metadanych (tytuł/wykonawca/rok) |
+| `dz` | opcjonalne | Deezer track ID | tylko kompatybilność wsteczna |
+| `t`  | opcjonalne | tytuł utworu | **pierwszeństwo** na ekranie odpowiedzi |
+| `a`  | opcjonalne | wykonawca | **pierwszeństwo** na ekranie odpowiedzi |
+| `y`  | opcjonalne | rok (np. `1975`) | **pierwszeństwo** — autorytatywny rok gry |
+
+Zasady:
+
+- Musi wystąpić **co najmniej jedno** z `yt` / `it` / `dz`, inaczej kod jest
+  traktowany jako nieznany.
+- `t` / `a` / `y` jeśli podane, **nadpisują** metadane z iTunes na ekranie
+  odpowiedzi. Bez `y` rok pochodzi z daty wydania w iTunes — dla wznowień i
+  kompilacji bywa nietrafny, więc dla precyzji w grze podawaj `y` jawnie.
+- Nieznane pola są ignorowane (bezpieczne dla przyszłych rozszerzeń).
+
+### Przykład
+
+```
+tripline:yt=fJ9rUzIMcZQ&it=1440806041&t=Bohemian%20Rhapsody&a=Queen&y=1975
+```
+
+### Formaty zgodności wstecznej
+
+Skaner przyjmuje też (bez prefiksu `tripline:`):
+
+- pełny link YouTube — `https://www.youtube.com/watch?v=…` lub `https://youtu.be/…`,
+- czyste 11-znakowe ID YouTube,
+- inne linki — przepuszczane tylko przez allow-listę bezpiecznych hostów
+  (patrz **Bezpieczeństwo**).
+
+Nowe karty generuj wyłącznie w formacie `tripline:` — pozostałe istnieją tylko
+dla starych talii.
 
 ## Zbieranie feedbacku (test prototypu)
 
