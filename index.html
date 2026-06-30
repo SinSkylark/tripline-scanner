@@ -6,7 +6,9 @@
   <meta name="theme-color" content="#0a0a0a" />
   <title>TripLine Scanner</title>
   <link rel="icon" type="image/png" href="favicon.png" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+  <!-- Self-hosted (no CDN dependency — festival networks are unreliable).
+       If the file ever fails to load, __qrLibFailed gates startScanner(). -->
+  <script src="vendor/html5-qrcode.min.js" onerror="window.__qrLibFailed=true"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -245,6 +247,46 @@
     .done-label { font-size: 13px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-top: 6px; }
     .done-title { font-size: 22px; font-weight: 700; }
 
+    /* ── Answer reveal ── */
+    .reveal-artist { font-size: 15px; color: var(--text); opacity: 0.85; }
+    .reveal-year   { font-size: 14px; color: var(--accent); font-weight: 600; letter-spacing: 0.04em; margin-top: 4px; }
+
+    /* ── Feedback widgets ── */
+    .feedback { width: 100%; display: flex; flex-direction: column; gap: 14px; }
+    .fb-group { display: flex; flex-direction: column; gap: 7px; }
+    .fb-q     { font-size: 13px; color: var(--text-muted); text-align: center; }
+    .fb-opts  { display: flex; gap: 6px; }
+    .fb-btn {
+      flex: 1;
+      padding: 12px 6px;
+      border: 2px solid transparent;
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--text-muted);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+    }
+    .fb-btn.selected {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--surface2);
+    }
+
+    /* ── Feedback summary entry (start screen) ── */
+    .fb-summary {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 12px;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 4px;
+      -webkit-tap-highlight-color: transparent;
+    }
+
     /* ── Error screen ── */
     .error-card {
       width: 100%;
@@ -286,7 +328,7 @@
     <div class="logo">
       <div class="logo-icon">🎵</div>
       <div class="logo-title">TripLine</div>
-      <div class="logo-sub">Card Scanner</div>
+      <div class="logo-sub">Skaner kart</div>
     </div>
 
     <div class="service-picker">
@@ -296,27 +338,28 @@
       </button>
       <button class="svc-btn" id="svc-appleMusic" onclick="setService('appleMusic')">
         <span class="svc-name">♪ Apple Music</span>
-        <span class="svc-sub">Subscription</span>
+        <span class="svc-sub">Subskrypcja</span>
       </button>
       <button class="svc-btn" id="svc-tidal"      onclick="setService('tidal')">
         <span class="svc-name">◈ Tidal</span>
-        <span class="svc-sub">Subscription</span>
+        <span class="svc-sub">Subskrypcja</span>
       </button>
       <button class="svc-btn" id="svc-youtube"    onclick="setService('youtube')">
         <span class="svc-name">▶ YouTube</span>
-        <span class="svc-sub">Free</span>
+        <span class="svc-sub">Za darmo</span>
       </button>
       <button class="svc-btn" id="svc-preview"    onclick="setService('preview')">
-        <span class="svc-name">🎵 Preview 30s</span>
-        <span class="svc-sub">Free · no account needed</span>
+        <span class="svc-name">🎵 Fragment 30s</span>
+        <span class="svc-sub">Za darmo · bez konta · zalecane</span>
       </button>
     </div>
 
-    <button class="btn btn-primary" onclick="startScanner()">Scan Card</button>
+    <button class="btn btn-primary" onclick="startScanner()">Skanuj kartę</button>
     <p class="tip">
-      Avoid <span>strong light reflections</span> on the card —<br>
-      they can prevent the camera from reading the QR code.
+      Unikaj <span>silnych odbić światła</span> na karcie —<br>
+      mogą uniemożliwić kamerze odczyt kodu QR.
     </p>
+    <button class="fb-summary" id="fb-summary" onclick="showScreen('screen-feedback')" style="display:none"></button>
   </section>
 
   <!-- ② SCANNER -->
@@ -325,8 +368,8 @@
       <div id="qr-reader"></div>
       <div class="viewfinder"><div class="viewfinder-box"></div></div>
     </div>
-    <p class="scan-hint">Hold the card steady inside the frame</p>
-    <button class="btn btn-secondary" onclick="cancelScanner()">Cancel</button>
+    <p class="scan-hint">Trzymaj kartę nieruchomo w ramce</p>
+    <button class="btn btn-secondary" onclick="cancelScanner()">Anuluj</button>
   </section>
 
   <!-- ③ PLAYER -->
@@ -345,11 +388,11 @@
 
     <!-- Pre-play state -->
     <div id="state-ready" style="width:100%; display:flex; flex-direction:column; gap:14px;">
-      <button class="btn-play-big" id="btn-tap-play" onclick="tapPlay()">▶ TAP TO PLAY</button>
-      <p class="player-tip" id="player-tip">DJ: tap play, then turn the phone face down</p>
+      <button class="btn-play-big" id="btn-tap-play" onclick="tapPlay()">▶ DOTKNIJ, BY ODTWORZYĆ</button>
+      <p class="player-tip" id="player-tip">DJ: włącz odtwarzanie, potem odłóż telefon ekranem w dół</p>
       <a id="btn-yt-link" href="#" target="_blank" rel="noopener"
          style="display:none; text-align:center; color:var(--text-muted); font-size:13px; text-decoration:underline; padding:4px 0;">
-        Can't play? Open on YouTube ↗
+        Nie działa? Otwórz na YouTube ↗
       </a>
     </div>
 
@@ -359,36 +402,76 @@
     </div>
   </section>
 
-  <!-- ④ DONE -->
+  <!-- ④ DONE — answer reveal + quick feedback -->
   <section class="screen" id="screen-done">
     <div class="done-card">
-      <div class="done-icon">🎶</div>
-      <div class="done-label">Time's up</div>
-      <div class="done-title">What year was it?</div>
+      <div class="done-label">Odpowiedź</div>
+      <div class="done-title"    id="reveal-title">—</div>
+      <div class="reveal-artist" id="reveal-artist"></div>
+      <div class="reveal-year"   id="reveal-year"></div>
     </div>
-    <button class="btn btn-primary"   onclick="scanNext()">Scan Next Card</button>
-    <button class="btn btn-secondary" onclick="playAgain()">↺ Play Again</button>
+
+    <div class="feedback" id="feedback-block">
+      <div class="fb-group">
+        <div class="fb-q">Czy znałeś/aś ten utwór?</div>
+        <div class="fb-opts">
+          <button class="fb-btn" onclick="selectFeedback('known','yes',this)">Tak</button>
+          <button class="fb-btn" onclick="selectFeedback('known','no',this)">Nie</button>
+        </div>
+      </div>
+      <div class="fb-group">
+        <div class="fb-q">Poziom trudności</div>
+        <div class="fb-opts">
+          <button class="fb-btn" onclick="selectFeedback('difficulty','easy',this)">Za łatwe</button>
+          <button class="fb-btn" onclick="selectFeedback('difficulty','ok',this)">W sam raz</button>
+          <button class="fb-btn" onclick="selectFeedback('difficulty','hard',this)">Za trudne</button>
+        </div>
+      </div>
+      <div class="fb-group">
+        <div class="fb-q">Jak Ci się podobał utwór?</div>
+        <div class="fb-opts">
+          <button class="fb-btn" onclick="selectFeedback('rating','up',this)">👍</button>
+          <button class="fb-btn" onclick="selectFeedback('rating','down',this)">👎</button>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary"   onclick="scanNext()">Skanuj następną kartę</button>
+    <button class="btn btn-secondary" onclick="playAgain()">↺ Zagraj ponownie</button>
   </section>
 
   <!-- ⑤ LEGACY (old QR format — plain URL) -->
   <section class="screen" id="screen-legacy">
     <div class="done-card">
       <div class="done-icon">🎵</div>
-      <div class="done-label">Card scanned</div>
-      <div class="done-title">Ready to play!</div>
+      <div class="done-label">Karta zeskanowana</div>
+      <div class="done-title">Gotowe do odtworzenia!</div>
     </div>
-    <button class="btn btn-primary" id="btn-legacy-open" onclick="openLegacyUrl()">▶ Open Song</button>
-    <button class="btn btn-secondary" onclick="scanNext()">Scan Next Card</button>
+    <button class="btn btn-primary" id="btn-legacy-open" onclick="openLegacyUrl()">▶ Otwórz utwór</button>
+    <button class="btn btn-secondary" onclick="scanNext()">Skanuj następną kartę</button>
   </section>
 
   <!-- ⑥ ERROR -->
   <section class="screen" id="screen-error">
     <div class="error-card">
       <div class="error-icon">📷</div>
-      <div class="error-title" id="error-title">Camera access denied</div>
+      <div class="error-title" id="error-title">Brak dostępu do kamery</div>
       <div class="error-body"  id="error-body"></div>
     </div>
-    <button class="btn btn-primary" onclick="showScreen('screen-start')">Try Again</button>
+    <button class="btn btn-primary" onclick="showScreen('screen-start')">Spróbuj ponownie</button>
+  </section>
+
+  <!-- ⑦ FEEDBACK PANEL — export collected ratings -->
+  <section class="screen" id="screen-feedback">
+    <div class="done-card">
+      <div class="done-icon">📊</div>
+      <div class="done-label">Zebrane oceny</div>
+      <div class="done-title" id="fb-count">0</div>
+    </div>
+    <button class="btn btn-primary"   onclick="exportFeedback('csv')">Eksportuj CSV</button>
+    <button class="btn btn-secondary" onclick="exportFeedback('json')">Eksportuj JSON</button>
+    <button class="btn btn-secondary" onclick="clearFeedback()">Wyczyść dane</button>
+    <button class="btn btn-secondary" onclick="showScreen('screen-start')">Wróć</button>
   </section>
 
 </div>
@@ -412,22 +495,28 @@ console.log(
 //  STATE
 // ═══════════════════════════════════════════════════════
 let html5QrCode    = null;
-let scannedData    = null;   // { yt, dz, it } or { raw }
+let scannedData    = null;   // { yt, dz, it, t, a, y } or { raw }
 let currentService = localStorage.getItem('tl_service') || 'preview';
-let countdownSec   = 30;
 let countdownTimer = null;
+let countdownEndsAt = 0;     // epoch ms — timestamp-based so background throttling can't drift it
+let countdownOnDone = null;
 let audioEl        = null;
 
 // BYOS service resolution (populated in preparePlayer via Odesli + iTunes)
 let resolvedLinks  = {};    // { spotify: url, appleMusic: url, tidal: url, ... }
 let previewUrl     = null;  // iTunes AAC 30s clip URL
 let resolveReady   = false; // true when async lookups complete
+let trackMeta      = {};    // { title, artist, year } — for the answer reveal
+
+// Feedback record for the round currently on the Done screen (committed on leave)
+let pendingRecord  = null;
 
 // ═══════════════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════════════
 (function init() {
   applyServiceUI(currentService);
+  updateFeedbackCount();
 })();
 
 // ═══════════════════════════════════════════════════════
@@ -446,7 +535,7 @@ const SERVICE_LABELS = {
   appleMusic: 'Apple Music',
   tidal:      'Tidal',
   youtube:    'YouTube',
-  preview:    'Preview 30s',
+  preview:    'Fragment 30s',
 };
 
 function setService(svc) {
@@ -469,12 +558,16 @@ function parseQR(text) {
   text = text.trim();
 
   // BYOS format: tripline:yt=VIDEO_ID&it=ITUNES_ID[&dz=DEEZER_ID]
+  //   Optional answer fields (override iTunes on the reveal): t=title&a=artist&y=year
   if (text.startsWith('tripline:')) {
     const params = new URLSearchParams(text.slice(9));
     const yt = params.get('yt') || null;
     const dz = params.get('dz') || null;
     const it = params.get('it') || null;
-    if (yt || dz || it) return { yt, dz, it };
+    const t  = params.get('t')  || null;
+    const a  = params.get('a')  || null;
+    const y  = params.get('y')  || null;
+    if (yt || dz || it) return { yt, dz, it, t, a, y };
   }
 
   // Plain YouTube URLs (backward compat)
@@ -494,6 +587,14 @@ function parseQR(text) {
 //  SCANNER
 // ═══════════════════════════════════════════════════════
 async function startScanner() {
+  // Guard: the scanner library is self-hosted, but a corrupt/aborted load
+  // would otherwise make "Skanuj kartę" silently do nothing.
+  if (typeof Html5Qrcode === 'undefined' || window.__qrLibFailed) {
+    showError('Nie można uruchomić skanera',
+      'Nie udało się załadować modułu skanera QR. Sprawdź połączenie i odśwież stronę.');
+    return;
+  }
+
   showScreen('screen-scanner');
 
   if (html5QrCode) {
@@ -562,6 +663,7 @@ async function loadServiceLinks(data) {
   resolveReady  = false;
   resolvedLinks = {};
   previewUrl    = null;
+  trackMeta     = {};
   if (!data || !data.it) { resolveReady = true; return; }
 
   try {
@@ -570,6 +672,13 @@ async function loadServiceLinks(data) {
     const r    = json.results?.[0];
     if (r) {
       previewUrl = r.previewUrl || null;
+
+      // Metadata for the answer reveal (release year is the album date)
+      trackMeta = {
+        title:  r.trackName  || null,
+        artist: r.artistName || null,
+        year:   (r.releaseDate || '').slice(0, 4) || null,
+      };
 
       // Apple Music: iTunes trackViewUrl IS a valid Apple Music link
       if (r.trackViewUrl) {
@@ -597,8 +706,8 @@ function preparePlayer() {
   document.getElementById('source-name').textContent = SERVICE_LABELS[svc] || svc;
   document.getElementById('player-tip').textContent  =
     svc === 'preview'
-      ? 'Free 30s clip — plays in-app, no account needed'
-      : 'DJ: tap play, then turn the phone face down';
+      ? 'Darmowy 30-sekundowy fragment — gra w aplikacji, bez konta'
+      : 'DJ: włącz odtwarzanie, potem odłóż telefon ekranem w dół';
 
   // YouTube fallback link (always available if card has yt ID)
   const ytLink = document.getElementById('btn-yt-link');
@@ -606,7 +715,7 @@ function preparePlayer() {
     const ts = randomStartSeconds();
     ytLink.href = `https://www.youtube.com/watch?v=${scannedData.yt}&t=${ts}s`;
     ytLink.style.display = svc === 'youtube' ? 'none' : 'block';
-    ytLink.textContent   = 'Can\'t play? Open on YouTube ↗';
+    ytLink.textContent   = 'Nie działa? Otwórz na YouTube ↗';
     ytLink.style.cssText = ytLink.style.display === 'none'
       ? 'display:none'
       : 'display:block;text-align:center;color:var(--text-muted);font-size:13px;text-decoration:underline;padding:4px 0;';
@@ -665,7 +774,7 @@ function tapPlay() {
 function _startPreviewAudio(url) {
   audioEl = new Audio(url);
   audioEl.play()
-    .then(() => startCountdown(() => { stopAudio(); showScreen('screen-done'); }))
+    .then(() => startCountdown(() => { stopAudio(); enterDone(); }))
     .catch(() => { stopAudio(); _openYouTubeAndCountdown(); });
 }
 
@@ -691,7 +800,7 @@ async function _doPlay() {
     const url = resolvedLinks[svc];
     if (url) {
       window.open(url, '_blank', 'noopener');
-      startCountdown(() => showScreen('screen-done'));
+      startCountdown(() => enterDone());
     } else {
       _openYouTubeAndCountdown();
     }
@@ -706,13 +815,13 @@ function _openYouTubeAndCountdown() {
       '_blank', 'noopener'
     );
   }
-  startCountdown(() => showScreen('screen-done'));
+  startCountdown(() => enterDone());
 }
 
 function tapStop() {
   clearCountdown();
   stopAudio();
-  showScreen('screen-done');
+  enterDone();
 }
 
 function stopAudio() {
@@ -723,44 +832,46 @@ function stopAudio() {
 //  COUNTDOWN
 // ═══════════════════════════════════════════════════════
 const RING_CIRCUM = 628; // 2π × 100
+const COUNTDOWN_MS = 30000;
 
 function resetCountdownUI() {
-  countdownSec = 30;
   document.getElementById('countdown-number').textContent = '30';
   document.getElementById('countdown-number').style.color = 'var(--accent)';
   document.getElementById('ring-arc').style.strokeDashoffset = '0';
   document.getElementById('ring-arc').style.stroke = 'var(--accent)';
-  countdownTimer = null;
 }
 
 function startCountdown(onDone) {
   clearCountdown();
-  countdownSec = 30;
-  tickCountdown(onDone);
-  countdownTimer = setInterval(() => tickCountdown(onDone), 1000);
+  countdownOnDone = onDone;
+  countdownEndsAt = Date.now() + COUNTDOWN_MS;
+  renderCountdown();
+  // 250 ms keeps the ring smooth; remaining time is derived from the clock,
+  // so even if the timer is throttled while backgrounded the count stays correct.
+  countdownTimer = setInterval(renderCountdown, 250);
 }
 
-function tickCountdown(onDone) {
-  const n = document.getElementById('countdown-number');
+function renderCountdown() {
+  const remainingMs = Math.max(0, countdownEndsAt - Date.now());
+  const sec = Math.ceil(remainingMs / 1000);
+  const n   = document.getElementById('countdown-number');
   const arc = document.getElementById('ring-arc');
 
-  n.textContent = countdownSec;
+  n.textContent = sec;
 
-  // Progress ring
-  const progress  = (30 - countdownSec) / 30;
+  const progress = (COUNTDOWN_MS - remainingMs) / COUNTDOWN_MS;
   arc.style.strokeDashoffset = (RING_CIRCUM * progress).toFixed(1);
 
-  // Colour shift at ≤ 5 seconds
-  const danger = countdownSec <= 5;
-  n.style.color  = danger ? 'var(--danger)' : 'var(--accent)';
+  const danger = sec <= 5;
+  n.style.color    = danger ? 'var(--danger)' : 'var(--accent)';
   arc.style.stroke = danger ? 'var(--danger)' : 'var(--accent)';
 
-  if (countdownSec <= 0) {
+  if (remainingMs <= 0) {
     clearCountdown();
-    onDone();
-    return;
+    const cb = countdownOnDone;
+    countdownOnDone = null;
+    if (cb) cb();
   }
-  countdownSec--;
 }
 
 function clearCountdown() {
@@ -768,12 +879,19 @@ function clearCountdown() {
     clearInterval(countdownTimer);
     countdownTimer = null;
   }
+  countdownOnDone = null;
 }
+
+// Re-sync the moment the tab regains focus (returning from YouTube/Spotify app).
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && countdownTimer) renderCountdown();
+});
 
 // ═══════════════════════════════════════════════════════
 //  NAVIGATION
 // ═══════════════════════════════════════════════════════
 function scanNext() {
+  commitPending();
   scannedData = null;
   clearCountdown();
   stopAudio();
@@ -781,8 +899,106 @@ function scanNext() {
 }
 
 function playAgain() {
+  commitPending();
   if (!scannedData) { showScreen('screen-start'); return; }
   preparePlayer();
+}
+
+// ═══════════════════════════════════════════════════════
+//  ANSWER REVEAL + FEEDBACK CAPTURE
+// ═══════════════════════════════════════════════════════
+// Shown when the song finishes. Reveals the answer and records a feedback
+// row for the round. Storage is local-first (festival networks are flaky);
+// the operator exports CSV/JSON from the feedback panel at the end.
+function enterDone() {
+  // Card-provided answer wins over iTunes metadata (authoritative for the game)
+  const title  = (scannedData && scannedData.t) || trackMeta.title  || null;
+  const artist = (scannedData && scannedData.a) || trackMeta.artist || null;
+  const year   = (scannedData && scannedData.y) || trackMeta.year   || null;
+
+  document.getElementById('reveal-title').textContent  = title || 'Utwór odtworzony';
+  document.getElementById('reveal-artist').textContent = artist || '';
+  document.getElementById('reveal-year').textContent   = year ? ('Rok: ' + year) : '';
+
+  document.querySelectorAll('#feedback-block .fb-btn')
+    .forEach(b => b.classList.remove('selected'));
+
+  pendingRecord = {
+    ts:      new Date().toISOString(),
+    service: currentService,
+    yt:      (scannedData && scannedData.yt) || null,
+    it:      (scannedData && scannedData.it) || null,
+    title, artist, year,
+    known: null, difficulty: null, rating: null,
+  };
+
+  showScreen('screen-done');
+}
+
+function selectFeedback(group, val, btn) {
+  if (!pendingRecord) return;
+  pendingRecord[group] = val;
+  btn.parentElement.querySelectorAll('.fb-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+function getFeedback() {
+  try { return JSON.parse(localStorage.getItem('tl_feedback') || '[]'); }
+  catch (_) { return []; }
+}
+
+function commitPending() {
+  if (!pendingRecord) return;
+  try {
+    const arr = getFeedback();
+    arr.push(pendingRecord);
+    localStorage.setItem('tl_feedback', JSON.stringify(arr));
+  } catch (_) {}
+  pendingRecord = null;
+  updateFeedbackCount();
+}
+
+function updateFeedbackCount() {
+  const n = getFeedback().length;
+  const c = document.getElementById('fb-count');
+  if (c) c.textContent = n;
+  const s = document.getElementById('fb-summary');
+  if (s) {
+    s.textContent = '📊 Zebrane oceny: ' + n;
+    s.style.display = n > 0 ? 'block' : 'none';
+  }
+}
+
+function exportFeedback(fmt) {
+  const data = getFeedback();
+  if (!data.length) { alert('Brak danych do eksportu.'); return; }
+
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+  let blob, name;
+
+  if (fmt === 'csv') {
+    const cols = ['ts','service','yt','it','title','artist','year','known','difficulty','rating'];
+    const esc  = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+    const rows = [cols.join(',')].concat(data.map(r => cols.map(c => esc(r[c])).join(',')));
+    // BOM so Excel reads UTF-8 (Polish characters) correctly
+    blob = new Blob(['﻿' + rows.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    name = `tripline-feedback-${stamp}.csv`;
+  } else {
+    blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    name = `tripline-feedback-${stamp}.json`;
+  }
+
+  const url = URL.createObjectURL(blob);
+  const a   = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function clearFeedback() {
+  if (!confirm('Usunąć wszystkie zebrane oceny? Tej operacji nie można cofnąć.')) return;
+  localStorage.removeItem('tl_feedback');
+  updateFeedbackCount();
 }
 
 // A printed QR code is UNTRUSTED input. Without this gate, a malicious card
@@ -836,20 +1052,20 @@ function handleCameraError(err) {
   let title, body;
 
   if (msg.includes('permission') || msg.includes('notallowed') || msg.includes('denied')) {
-    title = 'Camera access denied';
-    body  = `Grant camera access first.<br><br>
-             <strong>iPhone:</strong> Settings → Safari → Camera → Allow<br><br>
-             <strong>Android:</strong> tap 🔒 in address bar → Camera → Allow<br><br>
-             Then tap <strong>Try Again</strong>.`;
+    title = 'Brak dostępu do kamery';
+    body  = `Najpierw zezwól na dostęp do kamery.<br><br>
+             <strong>iPhone:</strong> Ustawienia → Safari → Kamera → Zezwól<br><br>
+             <strong>Android:</strong> dotknij 🔒 w pasku adresu → Kamera → Zezwól<br><br>
+             Następnie dotknij <strong>Spróbuj ponownie</strong>.`;
   } else if (msg.includes('notfound') || msg.includes('no camera') || msg.includes('no device')) {
-    title = 'No camera found';
-    body  = 'This device doesn\'t appear to have a rear camera. Use a mobile phone.';
+    title = 'Nie znaleziono kamery';
+    body  = 'To urządzenie nie ma tylnej kamery. Użyj telefonu komórkowego.';
   } else if (msg.includes('notreadable') || msg.includes('in use')) {
-    title = 'Camera in use';
-    body  = 'Another app is using the camera. Close it and try again.';
+    title = 'Kamera jest zajęta';
+    body  = 'Inna aplikacja używa kamery. Zamknij ją i spróbuj ponownie.';
   } else {
-    title = 'Camera unavailable';
-    body  = `Make sure you're on HTTPS and no other app is using the camera.<br><br><em>${err}</em>`;
+    title = 'Kamera niedostępna';
+    body  = `Upewnij się, że strona działa po HTTPS i żadna inna aplikacja nie używa kamery.<br><br><em>${err}</em>`;
   }
 
   document.getElementById('error-title').textContent = title;
