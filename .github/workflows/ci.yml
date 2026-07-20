@@ -16,3 +16,6 @@ jobs:
 
       - name: Scanner security test (QR-target allow-list)
         run: node tests/test_scanner_security.js
+
+      - name: i18n + QR-contract test (pl/en parity, parseQR unchanged)
+        run: node tests/test_i18n.js
