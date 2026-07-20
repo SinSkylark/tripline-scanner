@@ -5,6 +5,15 @@ odtwarza utwór i odlicza 30 sekund, a po czasie ujawnia odpowiedź (tytuł,
 wykonawca, rok). Całość to jeden plik `index.html` — działa na GitHub Pages,
 bez backendu.
 
+## Język (PL / EN)
+
+Interfejs jest dwujęzyczny. **Domyślnie angielski** (skaner jedzie w pudełku
+edycji kolekcjonerskiej dla graczy międzynarodowych); polskie przeglądarki
+dostają automatycznie polski. Przełącznik **PL / EN** jest w prawym górnym rogu,
+a wybór zapisuje się w `localStorage` (`tl_lang`). Wszystkie teksty UI idą przez
+klucze i18n (słowniki `pl`/`en` w `index.html`); kontrakt QR jest niezależny od
+języka. *(Uwaga: redakcja-app w repo TripLine ma odwrotny domyślny język — PL.)*
+
 ## Jak grać
 
 1. Otwórz stronę na telefonie (Safari na iPhone, Chrome na Androidzie).
