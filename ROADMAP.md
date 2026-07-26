@@ -45,27 +45,50 @@ razem z kanonem.
 
 Założenie: kolekcjonerska talia ma **przetrwać nawet, gdy padnie hosting
 skanera** (GH Pages znika, domena wygasa). Karta z QR jest bezużyteczna,
-jeśli zależy od jednej żywej strony. Trzy warstwy zabezpieczenia, od
-najtańszej:
+jeśli zależy od jednej żywej strony.
 
-1. **Awaryjny odsyłacz w pudełku** (wewnętrzna strona pokrywki): QR +
-   krótki URL do repozytorium skanera + jednozdaniowa instrukcja „jak
-   odpalić samemu". Zapaleniec klonuje repo i serwuje stronę lokalnie
-   (`python3 -m http.server`). Koszt: jeden nadruk. Głównie zadanie
-   graficzne — po stronie TripLine #30. Skaner dostarcza: stabilny URL
-   repo + krótką instrukcję self-hostingu.
-2. **Kod skanera w pudełku / na karcie.** Do zweryfikowania był rozmiar
-   zbudowanej strony vs praktyczny limit gęstego QR (~2–3 kB/kod).
-   **Zweryfikowane (2026-07):** `index.html` ~50 kB (≈13,8 kB po gzip),
-   `vendor/html5-qrcode.min.js` ~375 kB. **Całość nie mieści się w QR** —
-   nawet sam gzipowany `index.html` (13,8 kB) grubo przekracza limit, a
-   biblioteka skanera (375 kB) tym bardziej. Nadruk całego kodu w QR
-   **odpada** przy obecnej zależności od `html5-qrcode`. Otwarte: czy
-   warto dążyć do wariantu bez ciężkiej biblioteki (dużo pracy, niski
-   priorytet). Domyślnie polegamy na warstwach 1 i 3.
-3. **Utrwalenie w sieci:** zrzut skanera do **Internet Archive** (Wayback),
-   **tag wydania w gicie** (zamrożona wersja), ewentualnie IPFS/seed.
-   Tanie, robione raz przy freeze.
+**Podejście (zmienione):** skaner to malutka strona statyczna — **~416 kB
+do wdrożenia** (`index.html` ~50 kB + `vendor/html5-qrcode.min.js` ~375 kB
++ favicon), grubo poniżej 1 MB (~600 kB zapasu). Więc trwałość to problem
+**hostingu/mirrorowania**, nie sztuczka z rozmiarem kodu. Zamiast jednego
+awaryjnego self-hostu — **research darmowych i trwałych hostów**, na
+których lustrzemy stronę pod QR/URL, który dalej się rozwiązuje. Zadanie
+badawcze: **issue #4**.
+
+**Decyzja (na teraz) — niski priorytet.** Na czas developmentu zostajemy
+przy **self-hostingu na GitHub Pages** (albo innym darmowym hoście); własnej
+domeny na razie brak (może kiedyś). Docelowa trwałość = **self-custody / DIY**
+w duchu produktu: skaner to publiczne, forkowalne repo — kto kupił talię DIY,
+może **sforkować i postawić własny scaner** na swoim GH Pages (fork → Pages
+daje HTTPS od ręki, więc aparat działa, czego kopia `file://` nie umie).
+Zachęcamy do self-hostingu w nocie w pudełku / README. **Edycje festiwalowe**
+(Red Smoke i ew. inne): ekipy, które i tak hostują własne strony, mogą hostić
+skaner dla swojej edycji — do pogadania przy współpracy. Utrzymanie po naszej
+stronie: tak długo, jak realnie damy radę, bez gwarancji (z czasem może
+wymagać update'ów) — dlatego prawdziwą odpowiedzią na trwałość jest fork +
+własny hosting, nie obietnica. Plan własna-domena / adres-treści / wiele
+mirrorów zostaje jako kształt docelowy, **nie realizowany teraz** — do rewizji
+przy freeze albo gdy pojawi się domena.
+
+Sedno — **co koduje nadrukowany QR** (decyzja przy freeze, razem z kanonem
+TripLine #29): (a) **własna domena** (indirekcja, którą przekierujemy na
+dowolny żywy mirror; trwałe póki domena odnawiana), (b) **adres treści**
+(IPFS CID / Arweave tx — niezależny od dostawcy, przeżyje śmierć hosta, ale
+wymaga bramki), albo (c) **oba** (URL główny + nadrukowany fallback).
+
+Kryteria (ważone trwałością) i kandydaci do zbadania — patrz issue #4:
+grupa A darmowe hosty statyczne (GH/GitLab/**Codeberg** Pages, Cloudflare,
+Netlify, Vercel, Surge, sourcehut), grupa B adresowanie treścią / trwałość
+(**IPFS** + pinning, **Arweave**/permaweb — pay-once, Wayback jako
+snapshot-fallback), grupa C indie/longevity (Neocities). Dostarczyć:
+macierz porównawcza + rekomendacja (**host główny + ≥2 mirrory + decyzja
+o kodowaniu QR**), zamknięta przy freeze.
+
+Z dawnego planu zostaje: **awaryjny odsyłacz w pudełku** (URL repo +
+instrukcja self-hostingu, TripLine #30) jako ludzki fallback; **Wayback +
+tag wydania** wpadają do grupy B jako opcje trwałości. **Odpada** nadruk
+całego kodu w QR — biblioteka `html5-qrcode` (~375 kB) grubo przekracza
+limit gęstego QR (~2–3 kB).
 
 ## Lokalizacja i język
 
