@@ -90,8 +90,8 @@ pudełku.
 **Decyzja (etap 1 — zrobione):** zamiast od razu wycinać, **schowaliśmy tryb
 głosowania za flagą**, domyślnie **wyłączoną** — gracz talii nigdy go nie widzi
 po odkryciu karty. Włączenie (admin/debug): `?vote=1` w URL (utrwalone w
-`localStorage` `tl_voting`) albo **ukryty gest — 5× tap w logo** na stronie
-startowej. Cały kod feedbacku jest zebrany za jedną flagą `votingEnabled`
+`localStorage` `tl_voting`) albo **prosty toggle 📊 w lewym górnym rogu**
+(jedno kliknięcie). Cały kod feedbacku jest zebrany za jedną flagą `votingEnabled`
 (blok ankiety w ekranie DONE, ekran `screen-feedback`, `selectFeedback`/
 `exportFeedback`/`commitPending`/`updateFeedbackCount`/`clearFeedback`, klucze
 i18n `fb.*` + `vote.*`, klucz `tl_feedback`), więc da się go wyrwać w jednym

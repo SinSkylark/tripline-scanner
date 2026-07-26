@@ -101,8 +101,7 @@ for old decks.
 **Enabling it** (admin/debug), either way persists in `localStorage` (`tl_voting`):
 
 - add **`?vote=1`** to the URL (`?vote=0` turns it back off), or
-- **tap the TripLine logo 5× within 3 seconds** on the start screen (a hidden
-  toggle — same gesture flips it off).
+- tap the small **📊 toggle in the top-left corner** (a single tap flips it on/off).
 
 When on, after each round the player can mark: whether they knew the track, the
 difficulty, and a rating (👍/👎). Each round is saved **locally** in

@@ -338,6 +338,36 @@
       color: var(--accent);
     }
 
+    /* Prototype-only voting toggle (top-left). Single tap; touch-action stops
+       the double-tap-to-zoom that a multi-tap gesture would trigger. */
+    .vote-switch {
+      position: fixed;
+      top: 10px; left: 10px;
+      z-index: 10;
+      background: var(--surface);
+      border-radius: var(--radius-sm);
+      padding: 2px;
+    }
+    .vote-switch button {
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      font-size: 13px;
+      line-height: 1;
+      padding: 5px 8px;
+      border-radius: 7px;
+      cursor: pointer;
+      opacity: 0.4;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      transition: background 0.15s, color 0.15s, opacity 0.15s;
+    }
+    .vote-switch button.active {
+      opacity: 1;
+      background: var(--surface2);
+      color: var(--accent);
+    }
+
     /* ── Hidden YouTube container ── */
     #yt-container {
       position: fixed;
@@ -357,11 +387,17 @@
   <button data-lang="en" onclick="setLang('en')">EN</button>
 </div>
 
+<!-- Prototype-only: voting/feedback mode toggle (off by default) — issue #6 -->
+<div class="vote-switch" id="vote-switch">
+  <button id="vote-toggle" type="button" onclick="toggleVoting()"
+          aria-label="Toggle voting mode (prototype)" title="Voting mode (prototype)">📊</button>
+</div>
+
 <div id="app">
 
   <!-- ① START -->
   <section class="screen active" id="screen-start">
-    <div class="logo" onclick="secretTap()">
+    <div class="logo">
       <div class="logo-icon">🎵</div>
       <div class="logo-title">TripLine</div>
       <div class="logo-sub" data-i18n="start.sub">Card scanner</div>
@@ -571,8 +607,6 @@ const I18N = {
     'fb.summary': '📊 Collected ratings: {n}',
     'fb.exportEmpty': 'No data to export.',
     'fb.clearConfirm': 'Delete all collected ratings? This cannot be undone.',
-    'vote.on':  'Voting mode ON (prototype). The post-round survey is now enabled.',
-    'vote.off': 'Voting mode OFF.',
     'scanner.libError.title': 'Cannot start the scanner',
     'scanner.libError.body': 'Failed to load the QR scanner module. Check your connection and refresh the page.',
     'qr.unsafe.title': 'Untrusted QR code',
@@ -629,8 +663,6 @@ const I18N = {
     'fb.summary': '📊 Zebrane oceny: {n}',
     'fb.exportEmpty': 'Brak danych do eksportu.',
     'fb.clearConfirm': 'Usunąć wszystkie zebrane oceny? Tej operacji nie można cofnąć.',
-    'vote.on':  'Tryb głosowania WŁĄCZONY (prototyp). Ankieta po rundzie jest teraz aktywna.',
-    'vote.off': 'Tryb głosowania WYŁĄCZONY.',
     'scanner.libError.title': 'Nie można uruchomić skanera',
     'scanner.libError.body': 'Nie udało się załadować modułu skanera QR. Sprawdź połączenie i odśwież stronę.',
     'qr.unsafe.title': 'Niezaufany kod QR',
@@ -763,26 +795,17 @@ function initVotingMode() {
 function applyVotingMode() {
   const fb = document.getElementById('feedback-block');
   if (fb) fb.style.display = votingEnabled ? '' : 'none';
+  const tg = document.getElementById('vote-toggle');
+  if (tg) tg.classList.toggle('active', votingEnabled);
   updateFeedbackCount();
 }
 
-function setVotingEnabled(on) {
-  votingEnabled = on;
-  localStorage.setItem(LS_VOTING, on ? '1' : '0');
+// Simple admin/debug toggle (top-left corner). Single tap — no multi-tap
+// gesture, so it never triggers the browser's double-tap-to-zoom.
+function toggleVoting() {
+  votingEnabled = !votingEnabled;
+  localStorage.setItem(LS_VOTING, votingEnabled ? '1' : '0');
   applyVotingMode();
-  alert(t(on ? 'vote.on' : 'vote.off'));
-}
-
-// Hidden admin/debug gesture: tap the logo 5× within 3 s to toggle voting mode.
-let _voteTaps = 0, _voteTapTimer = null;
-function secretTap() {
-  _voteTaps++;
-  clearTimeout(_voteTapTimer);
-  _voteTapTimer = setTimeout(() => { _voteTaps = 0; }, 3000);
-  if (_voteTaps >= 5) {
-    _voteTaps = 0;
-    setVotingEnabled(!votingEnabled);
-  }
 }
 
 // ═══════════════════════════════════════════════════════
