@@ -338,6 +338,36 @@
       color: var(--accent);
     }
 
+    /* Prototype-only voting toggle (top-left). Single tap; touch-action stops
+       the double-tap-to-zoom that a multi-tap gesture would trigger. */
+    .vote-switch {
+      position: fixed;
+      top: 10px; left: 10px;
+      z-index: 10;
+      background: var(--surface);
+      border-radius: var(--radius-sm);
+      padding: 2px;
+    }
+    .vote-switch button {
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      font-size: 13px;
+      line-height: 1;
+      padding: 5px 8px;
+      border-radius: 7px;
+      cursor: pointer;
+      opacity: 0.4;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      transition: background 0.15s, color 0.15s, opacity 0.15s;
+    }
+    .vote-switch button.active {
+      opacity: 1;
+      background: var(--surface2);
+      color: var(--accent);
+    }
+
     /* ── Hidden YouTube container ── */
     #yt-container {
       position: fixed;
@@ -355,6 +385,12 @@
 <div class="lang-switch" id="lang-switch">
   <button data-lang="pl" onclick="setLang('pl')">PL</button>
   <button data-lang="en" onclick="setLang('en')">EN</button>
+</div>
+
+<!-- Prototype-only: voting/feedback mode toggle (off by default) — issue #6 -->
+<div class="vote-switch" id="vote-switch">
+  <button id="vote-toggle" type="button" onclick="toggleVoting()"
+          aria-label="Toggle voting mode (prototype)" title="Voting mode (prototype)">📊</button>
 </div>
 
 <div id="app">
@@ -447,7 +483,7 @@
       <div class="reveal-year"   id="reveal-year"></div>
     </div>
 
-    <div class="feedback" id="feedback-block">
+    <div class="feedback" id="feedback-block" style="display:none">
       <div class="fb-group">
         <div class="fb-q" data-i18n="fb.known.q">Did you know this track?</div>
         <div class="fb-opts">
@@ -720,14 +756,57 @@ let trackMeta      = {};    // { title, artist, year } — for the answer reveal
 // Feedback record for the round currently on the Done screen (committed on leave)
 let pendingRecord  = null;
 
+// ── Voting/feedback mode — PROTOTYPE-ONLY, OFF BY DEFAULT ──
+// The post-round survey + CSV/JSON export were built for festival prototype
+// testing; players of the shipped deck never see them. Admin/debug turns the
+// mode on via ?vote=1 (persists) or a hidden gesture (tap the logo 5×).
+// Everything voting-related is gated on this one flag so it can be ripped out
+// in one pass when it's no longer needed (issue #6).
+const LS_VOTING = 'tl_voting';
+let votingEnabled = false;
+
 // ═══════════════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════════════
 (function init() {
+  initVotingMode();
   initI18n();
   applyServiceUI(currentService);
   updateFeedbackCount();
 })();
+
+// ═══════════════════════════════════════════════════════
+//  VOTING MODE (prototype-only, gated — issue #6)
+// ═══════════════════════════════════════════════════════
+// Resolve the flag from ?vote=… (which also persists the choice) then from
+// localStorage, and reflect it in the DOM.
+function initVotingMode() {
+  const p = new URLSearchParams(location.search).get('vote');
+  if (p !== null) {
+    const on = p === '1' || p === 'true' || p === 'on';
+    localStorage.setItem(LS_VOTING, on ? '1' : '0');
+  }
+  votingEnabled = localStorage.getItem(LS_VOTING) === '1';
+  applyVotingMode();
+}
+
+// Show/hide the survey block on the Done screen; the start-screen summary
+// button is handled by updateFeedbackCount (also gated on votingEnabled).
+function applyVotingMode() {
+  const fb = document.getElementById('feedback-block');
+  if (fb) fb.style.display = votingEnabled ? '' : 'none';
+  const tg = document.getElementById('vote-toggle');
+  if (tg) tg.classList.toggle('active', votingEnabled);
+  updateFeedbackCount();
+}
+
+// Simple admin/debug toggle (top-left corner). Single tap — no multi-tap
+// gesture, so it never triggers the browser's double-tap-to-zoom.
+function toggleVoting() {
+  votingEnabled = !votingEnabled;
+  localStorage.setItem(LS_VOTING, votingEnabled ? '1' : '0');
+  applyVotingMode();
+}
 
 // ═══════════════════════════════════════════════════════
 //  SCREEN HELPERS
@@ -1135,14 +1214,15 @@ function enterDone() {
   document.querySelectorAll('#feedback-block .fb-btn')
     .forEach(b => b.classList.remove('selected'));
 
-  pendingRecord = {
+  // Only capture a feedback row when voting mode is on (prototype-only).
+  pendingRecord = votingEnabled ? {
     ts:      new Date().toISOString(),
     service: currentService,
     yt:      (scannedData && scannedData.yt) || null,
     it:      (scannedData && scannedData.it) || null,
     title, artist, year,
     known: null, difficulty: null, rating: null,
-  };
+  } : null;
 
   showScreen('screen-done');
 }
@@ -1177,7 +1257,7 @@ function updateFeedbackCount() {
   const s = document.getElementById('fb-summary');
   if (s) {
     s.textContent = t('fb.summary', { n });
-    s.style.display = n > 0 ? 'block' : 'none';
+    s.style.display = (votingEnabled && n > 0) ? 'block' : 'none';
   }
 }
 
