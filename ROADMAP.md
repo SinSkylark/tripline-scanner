@@ -55,6 +55,21 @@ awaryjnego self-hostu — **research darmowych i trwałych hostów**, na
 których lustrzemy stronę pod QR/URL, który dalej się rozwiązuje. Zadanie
 badawcze: **issue #4**.
 
+**Decyzja (na teraz) — niski priorytet.** Na czas developmentu zostajemy
+przy **self-hostingu na GitHub Pages** (albo innym darmowym hoście); własnej
+domeny na razie brak (może kiedyś). Docelowa trwałość = **self-custody / DIY**
+w duchu produktu: skaner to publiczne, forkowalne repo — kto kupił talię DIY,
+może **sforkować i postawić własny scaner** na swoim GH Pages (fork → Pages
+daje HTTPS od ręki, więc aparat działa, czego kopia `file://` nie umie).
+Zachęcamy do self-hostingu w nocie w pudełku / README. **Edycje festiwalowe**
+(Red Smoke i ew. inne): ekipy, które i tak hostują własne strony, mogą hostić
+skaner dla swojej edycji — do pogadania przy współpracy. Utrzymanie po naszej
+stronie: tak długo, jak realnie damy radę, bez gwarancji (z czasem może
+wymagać update'ów) — dlatego prawdziwą odpowiedzią na trwałość jest fork +
+własny hosting, nie obietnica. Plan własna-domena / adres-treści / wiele
+mirrorów zostaje jako kształt docelowy, **nie realizowany teraz** — do rewizji
+przy freeze albo gdy pojawi się domena.
+
 Sedno — **co koduje nadrukowany QR** (decyzja przy freeze, razem z kanonem
 TripLine #29): (a) **własna domena** (indirekcja, którą przekierujemy na
 dowolny żywy mirror; trwałe póki domena odnawiana), (b) **adres treści**
