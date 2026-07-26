@@ -87,15 +87,21 @@ na festiwalu: ankieta po rundzie (znałeś? / trudność / 👍👎), licznik
 warstwa jest **martwym balastem** — nikt nie eksportuje ocen z talii w
 pudełku.
 
-Do zrobienia przed freeze: **wyciąć kod tylko-prototypowy** ze skanera
-(≈150–200 linii `index.html`: blok ankiety w ekranie DONE, ekran
-`screen-feedback`, funkcje `selectFeedback`/`exportFeedback`/`loadFeedback`/
-`saveFeedback`/`updateFeedbackCount`/`clearFeedback`, klucze i18n `fb.*`,
-klucz `tl_feedback`). Efekt: leaner `index.html`, mniejsza powierzchnia do
+**Decyzja (etap 1 — zrobione):** zamiast od razu wycinać, **schowaliśmy tryb
+głosowania za flagą**, domyślnie **wyłączoną** — gracz talii nigdy go nie widzi
+po odkryciu karty. Włączenie (admin/debug): `?vote=1` w URL (utrwalone w
+`localStorage` `tl_voting`) albo **ukryty gest — 5× tap w logo** na stronie
+startowej. Cały kod feedbacku jest zebrany za jedną flagą `votingEnabled`
+(blok ankiety w ekranie DONE, ekran `screen-feedback`, `selectFeedback`/
+`exportFeedback`/`commitPending`/`updateFeedbackCount`/`clearFeedback`, klucze
+i18n `fb.*` + `vote.*`, klucz `tl_feedback`), więc da się go wyrwać w jednym
+przejściu.
+
+**Etap 2 (przed freeze):** **całkowicie usunąć** kod tylko-prototypowy, gdy nie
+będzie już potrzebny. Efekt: leaner `index.html`, mniejsza powierzchnia do
 utrzymania i prostszy freeze. Uwaga: to **nie** sprawi, że kod zmieści się
 w QR (dominuje `vendor/html5-qrcode.min.js` ~375 kB — patrz „Trwałość"),
-ale porządkuje produkt przed wydaniem. Decyzja: usunąć całkowicie vs zostawić
-za flagą/`?debug` na przyszłe testy — rekomendacja: usunąć (git pamięta).
+ale porządkuje produkt przed wydaniem.
 
 ## Warsztat techniczny (ciągłe)
 

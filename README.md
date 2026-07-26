@@ -94,9 +94,17 @@ for old decks.
 
 ## Feedback collection (prototype test)
 
-> Prototype-only, slated for removal before the release freeze (see issue #6).
+> **Prototype-only, OFF by default.** Players of the shipped deck never see it.
+> It's hidden behind a flag for occasional testing, and is slated for full
+> removal before the release freeze (see issue #6).
 
-After each round the player can mark: whether they knew the track, the
+**Enabling it** (admin/debug), either way persists in `localStorage` (`tl_voting`):
+
+- add **`?vote=1`** to the URL (`?vote=0` turns it back off), or
+- **tap the TripLine logo 5× within 3 seconds** on the start screen (a hidden
+  toggle — same gesture flips it off).
+
+When on, after each round the player can mark: whether they knew the track, the
 difficulty, and a rating (👍/👎). Each round is saved **locally** in
 `localStorage` (key `tl_feedback`) — it works offline.
 
