@@ -132,7 +132,8 @@ ale porządkuje produkt przed wydaniem.
 
 - CI zielone na tym repo (`.github/workflows/ci.yml`); testy
   bezpieczeństwa (`tests/test_scanner_security.js` — allow-lista hostów,
-  brak `javascript:`) i i18n (`tests/test_i18n.js`) blokują regresje.
+  brak `javascript:`), i18n (`tests/test_i18n.js`) i flagi trybu głosowania
+  (`tests/test_voting_flag.js` — ankieta domyślnie OFF) blokują regresje.
 - Biblioteka skanera (`html5-qrcode`) hostowana lokalnie w `vendor/` —
   brak zależności od CDN (istotne dla trwałości, patrz wyżej).
 - Kontrakt QR w README = źródło prawdy; każde narzędzie generujące karty

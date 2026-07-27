@@ -19,3 +19,6 @@ jobs:
 
       - name: i18n + QR-contract test (pl/en parity, parseQR unchanged)
         run: node tests/test_i18n.js
+
+      - name: Voting feature-flag test (survey OFF by default)
+        run: node tests/test_voting_flag.js
