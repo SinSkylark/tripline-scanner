@@ -115,10 +115,12 @@ głosowania za flagą**, domyślnie **wyłączoną** — gracz talii nigdy go ni
 po odkryciu karty. Włączenie (admin/debug): `?vote=1` w URL (utrwalone w
 `localStorage` `tl_voting`) albo **prosty toggle 📊 w lewym górnym rogu**
 (jedno kliknięcie). Cały kod feedbacku jest zebrany za jedną flagą `votingEnabled`
-(blok ankiety w ekranie DONE, ekran `screen-feedback`, `selectFeedback`/
-`exportFeedback`/`commitPending`/`updateFeedbackCount`/`clearFeedback`, klucze
-i18n `fb.*` + `vote.*`, klucz `tl_feedback`), więc da się go wyrwać w jednym
-przejściu.
+(blok ankiety `#feedback-block` w ekranie DONE, ekran `screen-feedback`,
+przycisk `#fb-summary`, toggle `.vote-switch`/`#vote-toggle`; funkcje
+`initVotingMode`/`applyVotingMode`/`toggleVoting`/`selectFeedback`/
+`commitPending`/`updateFeedbackCount`/`exportFeedback`/`clearFeedback`; klucze
+i18n `fb.*`; klucze `localStorage` `tl_feedback` + `tl_voting`), więc da się go
+wyrwać w jednym przejściu.
 
 **Etap 2 (przed freeze):** **całkowicie usunąć** kod tylko-prototypowy, gdy nie
 będzie już potrzebny. Efekt: leaner `index.html`, mniejsza powierzchnia do
